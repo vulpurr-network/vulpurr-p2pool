@@ -335,7 +335,7 @@ jobs:
       matrix:
         config:
           - {c: "gcc", cxx: "g++", flags: "-ffunction-sections -Wno-error=maybe-uninitialized -Wno-error=attributes -Wno-attributes"}
-          - {c: "clang", cxx: "clang++", flags: "-fuse-ld=lld -Wno-unused-command-line-argument -Wno-nan-infinity-disabled -Wno-attributes"}
+          - {c: "clang", cxx: "clang++", flags: "-fuse-ld=lld -Wno-unused-command-line-argument -Wno-nan-infinity-disabled -Wno-attributes -Wno-deprecated-attributes"}
 
     defaults:
       run:
@@ -631,7 +631,7 @@ jobs:
         os:
           - name: freebsd
             architecture: x86-64
-            version: '13.5'
+            version: '14.3'
             host: ubuntu-latest
 
     steps:
