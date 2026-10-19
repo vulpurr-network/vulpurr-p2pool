@@ -31,15 +31,7 @@ extern "C" {
 
 LOG_CATEGORY(Wallet)
 
-namespace {
-
-// Allow only regular addresses (no integrated addresses, no subaddresses)
-// Values taken from cryptonote_config.h (CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX)
-// Vulpurr mainnet only: CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX / CRYPTONOTE_PUBLIC_SUBADDRESS_BASE58_PREFIX
-constexpr uint64_t vulpurr_prefix = 0x63ac;
-constexpr uint64_t vulpurr_prefix_subaddress = 0x48ac;
-
-void write_prefix(uint8_t* out, uint64_t prefix)
+static void write_prefix(uint8_t* out, uint64_t prefix)
 {
 	for (int i = 0; i < p2pool::Wallet::PREFIX_SIZE; ++i) {
 		out[i] = static_cast<uint8_t>((prefix & 0x7F) | ((i + 1 < p2pool::Wallet::PREFIX_SIZE) ? 0x80 : 0));
@@ -47,7 +39,7 @@ void write_prefix(uint8_t* out, uint64_t prefix)
 	}
 }
 
-bool read_prefix(const uint8_t* in, uint64_t& prefix)
+static bool read_prefix(const uint8_t* in, uint64_t& prefix)
 {
 	prefix = 0;
 	for (int i = 0; i < p2pool::Wallet::PREFIX_SIZE; ++i) {
@@ -59,6 +51,12 @@ bool read_prefix(const uint8_t* in, uint64_t& prefix)
 	}
 	return true;
 }
+
+namespace {
+
+// Vulpurr mainnet only, values from cryptonote_config.h: CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX / CRYPTONOTE_PUBLIC_SUBADDRESS_BASE58_PREFIX
+constexpr uint64_t vulpurr_prefix = 0x63ac;
+constexpr uint64_t vulpurr_prefix_subaddress = 0x48ac;
 
 constexpr std::array<int, 9> block_sizes{ 0, 2, 3, 5, 6, 7, 9, 10, 11 };
 constexpr int num_full_blocks = p2pool::Wallet::ADDRESS_LENGTH / block_sizes.back();
