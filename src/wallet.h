@@ -24,10 +24,10 @@ namespace p2pool {
 class Wallet
 {
 public:
-	// public keys: 64 bytes -> 88 characters in base58
-	// prefix (1 byte) + checksum (4 bytes) -> 7 characters in base58
-	// 95 characters in total
-	static constexpr int ADDRESS_LENGTH = 95;
+	// Vulpurr: prefix is a 3-byte varint (0x63ac / 0x48ac), keys 64 bytes, checksum 4 bytes
+	// 71 bytes -> 98 characters in base58
+	static constexpr int PREFIX_SIZE = 3;
+	static constexpr int ADDRESS_LENGTH = 98;
 
 	explicit Wallet(const char* address);
 

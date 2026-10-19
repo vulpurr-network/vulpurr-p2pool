@@ -45,9 +45,9 @@ LOG_CATEGORY(P2PServer)
 static constexpr char saved_peer_list_file_name[] = "p2pool_peers.txt";
 static constexpr char saved_onion_peer_list_file_name[] = "p2pool_onion_peers.txt";
 static constexpr char saved_i2p_peer_list_file_name[] = "p2pool_i2p_peers.txt";
-static const char* seed_nodes[] = { "seeds.p2pool.io", "main.p2poolpeers.net", "" };
-static const char* seed_nodes_mini[] = { "seeds-mini.p2pool.io", "mini.p2poolpeers.net", "" };
-static const char* seed_nodes_nano[] = { "seeds-nano.p2pool.io", "nano.p2poolpeers.net", ""};
+static const char* seed_nodes[] = { "seed.vulpurr.com", "seed2.vulpurr.com", "31.77.251.246", "" };
+static const char* seed_nodes_mini[] = { "seed.vulpurr.com", "seed2.vulpurr.com", "31.77.251.246", "" };
+static const char* seed_nodes_nano[] = { "seed.vulpurr.com", "seed2.vulpurr.com", "31.77.251.246", ""};
 
 static constexpr int DEFAULT_BACKLOG = 16;
 static constexpr uint64_t DEFAULT_BAN_TIME = 600;

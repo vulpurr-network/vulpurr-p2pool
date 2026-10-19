@@ -422,7 +422,7 @@ template<> struct log::Stream::Entry<XMRAmount>
 		*wrapper << value.m_data / denomination << '.';
 
 		wrapper->setNumberWidth(12);
-		*wrapper << value.m_data % denomination << " XMR";
+		*wrapper << value.m_data % denomination << " VUP";
 
 		wrapper->setNumberWidth(w);
 	}

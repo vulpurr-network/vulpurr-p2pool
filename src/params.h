@@ -39,7 +39,7 @@ struct Params
 
 	struct Host
 	{
-		Host() : m_address("127.0.0.1"), m_rpcPort(18081), m_zmqPort(18083), m_rpcSSL(false) {}
+		Host() : m_address("127.0.0.1"), m_rpcPort(27081), m_zmqPort(27083), m_rpcSSL(false) {}
 
 		Host(const std::string& address, int32_t rpcPort, int32_t zmqPort, const std::string& rpcLogin)
 			: m_address(address)

@@ -35,9 +35,30 @@ namespace {
 
 // Allow only regular addresses (no integrated addresses, no subaddresses)
 // Values taken from cryptonote_config.h (CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX)
-constexpr uint64_t valid_prefixes[] = { 18, 53, 24 };
+// Vulpurr mainnet only: CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX / CRYPTONOTE_PUBLIC_SUBADDRESS_BASE58_PREFIX
+constexpr uint64_t vulpurr_prefix = 0x63ac;
+constexpr uint64_t vulpurr_prefix_subaddress = 0x48ac;
 
-constexpr uint64_t valid_prefixes_subaddress[] = { 42, 63, 36 };
+void write_prefix(uint8_t* out, uint64_t prefix)
+{
+	for (int i = 0; i < p2pool::Wallet::PREFIX_SIZE; ++i) {
+		out[i] = static_cast<uint8_t>((prefix & 0x7F) | ((i + 1 < p2pool::Wallet::PREFIX_SIZE) ? 0x80 : 0));
+		prefix >>= 7;
+	}
+}
+
+bool read_prefix(const uint8_t* in, uint64_t& prefix)
+{
+	prefix = 0;
+	for (int i = 0; i < p2pool::Wallet::PREFIX_SIZE; ++i) {
+		prefix |= static_cast<uint64_t>(in[i] & 0x7F) << (7 * i);
+		const bool more = (in[i] & 0x80) != 0;
+		if (more != (i + 1 < p2pool::Wallet::PREFIX_SIZE)) {
+			return false;
+		}
+	}
+	return true;
+}
 
 constexpr std::array<int, 9> block_sizes{ 0, 2, 3, 5, 6, 7, 9, 10, 11 };
 constexpr int num_full_blocks = p2pool::Wallet::ADDRESS_LENGTH / block_sizes.back();
@@ -153,25 +174,24 @@ bool Wallet::decode(const char* address)
 		}
 	}
 
-	m_prefix = data[0];
-
-	switch (m_prefix)
-	{
-	case valid_prefixes[0]: m_type = NetworkType::Mainnet;  break;
-	case valid_prefixes[1]: m_type = NetworkType::Testnet;  break;
-	case valid_prefixes[2]: m_type = NetworkType::Stagenet; break;
-
-	case valid_prefixes_subaddress[0]: m_type = NetworkType::Mainnet;  m_subaddress = true; break;
-	case valid_prefixes_subaddress[1]: m_type = NetworkType::Testnet;  m_subaddress = true; break;
-	case valid_prefixes_subaddress[2]: m_type = NetworkType::Stagenet; m_subaddress = true; break;
-
-	default:
+	if (!read_prefix(data, m_prefix)) {
 		return false;
 	}
 
-	memcpy(m_keys[0].h, data + 1, HASH_SIZE);
-	memcpy(m_keys[1].h, data + 1 + HASH_SIZE, HASH_SIZE);
-	memcpy(&m_checksum, data + 1 + HASH_SIZE * 2, sizeof(m_checksum));
+	if (m_prefix == vulpurr_prefix) {
+		m_type = NetworkType::Mainnet;
+	}
+	else if (m_prefix == vulpurr_prefix_subaddress) {
+		m_type = NetworkType::Mainnet;
+		m_subaddress = true;
+	}
+	else {
+		return false;
+	}
+
+	memcpy(m_keys[0].h, data + PREFIX_SIZE, HASH_SIZE);
+	memcpy(m_keys[1].h, data + PREFIX_SIZE + HASH_SIZE, HASH_SIZE);
+	memcpy(&m_checksum, data + PREFIX_SIZE + HASH_SIZE * 2, sizeof(m_checksum));
 
 	uint8_t md[200];
 	keccak(data, sizeof(data) - sizeof(m_checksum), md);
@@ -201,21 +221,18 @@ bool Wallet::assign(const hash& spend_pub_key, const hash& view_pub_key, Network
 		return false;
 	}
 
-	switch (type)
-	{
-	case NetworkType::Mainnet:  m_prefix = subaddress ? valid_prefixes_subaddress[0] : valid_prefixes[0]; break;
-	case NetworkType::Testnet:  m_prefix = subaddress ? valid_prefixes_subaddress[1] : valid_prefixes[1]; break;
-	case NetworkType::Stagenet: m_prefix = subaddress ? valid_prefixes_subaddress[2] : valid_prefixes[2]; break;
-	default:                    m_prefix = 0;                 break;
+	if (type != NetworkType::Mainnet) {
+		return false;
 	}
+	m_prefix = subaddress ? vulpurr_prefix_subaddress : vulpurr_prefix;
 
 	m_keys[0] = spend_pub_key;
 	m_keys[1] = view_pub_key;
 
-	uint8_t data[1 + HASH_SIZE * 2];
-	data[0] = static_cast<uint8_t>(m_prefix);
-	memcpy(data + 1, spend_pub_key.h, HASH_SIZE);
-	memcpy(data + 1 + HASH_SIZE, view_pub_key.h, HASH_SIZE);
+	uint8_t data[PREFIX_SIZE + HASH_SIZE * 2];
+	write_prefix(data, m_prefix);
+	memcpy(data + PREFIX_SIZE, spend_pub_key.h, HASH_SIZE);
+	memcpy(data + PREFIX_SIZE + HASH_SIZE, view_pub_key.h, HASH_SIZE);
 
 	uint8_t md[200];
 	keccak(data, sizeof(data), md);
@@ -235,12 +252,12 @@ bool Wallet::assign(const hash& spend_pub_key, const hash& view_pub_key, Network
 
 void Wallet::encode(char (&buf)[ADDRESS_LENGTH]) const
 {
-	uint8_t data[1 + HASH_SIZE * 2 + sizeof(m_checksum)];
+	uint8_t data[PREFIX_SIZE + HASH_SIZE * 2 + sizeof(m_checksum)];
 
-	data[0] = static_cast<uint8_t>(m_prefix);
-	memcpy(data + 1, m_keys[0].h, HASH_SIZE);
-	memcpy(data + 1 + HASH_SIZE, m_keys[1].h, HASH_SIZE);
-	memcpy(data + 1 + HASH_SIZE * 2, &m_checksum, sizeof(m_checksum));
+	write_prefix(data, m_prefix);
+	memcpy(data + PREFIX_SIZE, m_keys[0].h, HASH_SIZE);
+	memcpy(data + PREFIX_SIZE + HASH_SIZE, m_keys[1].h, HASH_SIZE);
+	memcpy(data + PREFIX_SIZE + HASH_SIZE * 2, &m_checksum, sizeof(m_checksum));
 
 	for (int i = 0; i <= num_full_blocks; ++i) {
 		uint64_t n = 0;

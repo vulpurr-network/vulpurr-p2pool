@@ -47,7 +47,7 @@
 
 LOG_CATEGORY(SideChain)
 
-static constexpr uint64_t MIN_DIFFICULTY = 100000;
+static constexpr uint64_t MIN_DIFFICULTY = 1000; // Vulpurr: small network
 static constexpr size_t UNCLE_BLOCK_DEPTH = 3;
 
 static constexpr uint64_t MAX_PPLNS_WINDOW_HOURS = 30;
@@ -66,7 +66,7 @@ SideChain::SideChain(p2pool* pool, NetworkType type, const char* pool_name)
 	: m_pool(pool)
 	, m_chainTip{ nullptr }
 	, m_seenWalletsLastPruneTime(0)
-	, m_poolName(pool_name ? pool_name : "default")
+	, m_poolName(pool_name ? std::string("vulpurr-") + pool_name : std::string("vulpurr"))
 	, m_targetBlockTime(10)
 	, m_minDifficulty(MIN_DIFFICULTY, 0)
 	, m_chainWindowSize(2160)
@@ -86,7 +86,7 @@ SideChain::SideChain(p2pool* pool, NetworkType type, const char* pool_name)
 
 	LOGINFO(1, log::LightCyan() << "network type  = " << type);
 
-	if (m_poolName == "nano") {
+	if (m_poolName == "vulpurr-nano") {
 		m_targetBlockTime = 30;
 		m_unclePenalty = 10;
 	}
