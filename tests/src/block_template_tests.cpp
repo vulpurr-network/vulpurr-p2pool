@@ -22,6 +22,7 @@
 #include "side_chain.h"
 #include "wallet.h"
 #include "keccak.h"
+#include "merkle.h"
 #include "params.h"
 #include "gtest/gtest.h"
 
@@ -56,14 +57,14 @@ TEST(block_template, update)
 	Mempool mempool;
 	Params params;
 
-	params.m_miningWallet = Wallet("44MnN1f3Eto8DZYUWuE5XZNUtE3vcRzt2j6PzqWpPau34e6Cf4fAxt6X2MBmrm6F9YMEiMNjN6W4Shn4pLcfNAja621jwyg");
+	params.m_miningWallet = Wallet("VuA6u7NUSZzQsVjMKkZxAdV1hxdCo4nmees727HhMSCRar8e268LKcXXVZ2Rz41XPCdgWS3TquZY74e24hcUYH5V4JtAkfHUWM");
 
 	// Test 1: empty template
 	tpl.update(data, mempool, params);
 	ASSERT_EQ(tpl.get_reward(), 600000000000ULL);
 
 	const PoolBlock* b = tpl.pool_block_template();
-	ASSERT_EQ(b->m_sidechainId, H("2c90c1926a75c81afd49bf4a4b63e9de7b4c153866411c47e7af864b547c23ec"));
+	ASSERT_EQ(b->m_sidechainId, H("8ac07ebf187d3d3c403435813f82beb21b496833e6b39b19ab19f2223ffae678"));
 
 	std::vector<uint8_t> blobs;
 	uint64_t height;
@@ -82,7 +83,7 @@ TEST(block_template, update)
 
 	hash blobs_hash;
 	keccak(blobs.data(), static_cast<int>(blobs.size()), blobs_hash.h);
-	ASSERT_EQ(blobs_hash, H("da11e1ee86779a559df63a55e0b238ce5a67b977e0f68a0b347a39d37096a4bc"));
+	ASSERT_EQ(blobs_hash, H("078082eab6b8cb2ded5796a037ffe790462d0fed267e47efe9d776ec69cd7f2a"));
 
 	// Test 2: mempool with high fee and low fee transactions, it must choose high fee transactions
 	for (uint64_t i = 0; i < 513; ++i) {
@@ -117,7 +118,7 @@ TEST(block_template, update)
 	tpl.update(data, mempool, params);
 	ASSERT_EQ(tpl.get_reward(), 612054770773ULL);
 
-	ASSERT_EQ(b->m_sidechainId, H("c9df4853003ab436416b9fc9a5a072d16b4dede849e697a8be2ebb9c88c8ec72"));
+	ASSERT_EQ(b->m_sidechainId, H("09dc0ef44b832fc5d12279308eef9884e520136301954cda9d86fe28cae0715f"));
 	ASSERT_EQ(b->m_transactions.size(), 203);
 
 	for (size_t i = 1; i < b->m_transactions.size(); ++i) {
@@ -134,7 +135,7 @@ TEST(block_template, update)
 	ASSERT_EQ(template_id, 2U);
 
 	keccak(blobs.data(), static_cast<int>(blobs.size()), blobs_hash.h);
-	ASSERT_EQ(blobs_hash, H("20aa6a98ca92bc4564bcdc367c078425d4b44b156c2bc7bb703ef055e4fd2c1b"));
+	ASSERT_EQ(blobs_hash, H("7c8fa636bf189ad53b34c4817d335059dfa516696e51a173cfe39e8519690ae4"));
 
 	// Test 3: small but not empty mempool, and aux chains
 
@@ -155,10 +156,13 @@ TEST(block_template, update)
 
 	data.aux_chains.emplace_back(H("01f0cf665bd4cd31cbb2b2470236389c483522b350335e10a4a5dca34cb85990"), H("d9de1cfba7cdbd47f12f77addcb39b24c1ae7a16c35372bf28d6aee5d7579ee6"), difficulty_type(1000000));
 
+	// The aux slot depends on the sidechain consensus ID: pick a nonce where the chains don't share a slot
+	ASSERT_TRUE(find_aux_nonce({ sidechain.consensus_hash(), data.aux_chains[0].unique_id }, data.aux_nonce));
+
 	tpl.update(data, mempool, params);
 	ASSERT_EQ(tpl.get_reward(), 600300000000ULL);
 
-	ASSERT_EQ(b->m_sidechainId, H("9317e0557a0ba99eac25bb5f4c43b7bbc0b0176d0c777adfac6486bfc46072e5"));
+	ASSERT_EQ(b->m_sidechainId, H("a99dde85c81862edf787e5c04bc28991c1180f49e42de099156d01051c961fcc"));
 	ASSERT_EQ(b->m_transactions.size(), 11);
 
 	tpl.get_hashing_blobs(0, 1000, blobs, height, diff, aux_diff, sidechain_diff, seed_hash, nonce_offset, template_id);
@@ -171,7 +175,7 @@ TEST(block_template, update)
 	ASSERT_EQ(template_id, 3U);
 
 	keccak(blobs.data(), static_cast<int>(blobs.size()), blobs_hash.h);
-	ASSERT_EQ(blobs_hash, H("af2b1d6547ba91fe9cf38a6cc0cf5a8a8de1badfbf62846287865e4db3e0bb58"));
+	ASSERT_EQ(blobs_hash, H("db0883d3a29173e80a56c1f542a775b975944cad731340230c2da298f94d8878"));
 
 	// Test 4: mempool with a lot of transactions with various fees, all parts of transaction picking algorithm should be tested
 
@@ -195,7 +199,7 @@ TEST(block_template, update)
 	tpl.update(data, mempool, params);
 	ASSERT_EQ(tpl.get_reward(), 619742028747ULL);
 
-	ASSERT_EQ(b->m_sidechainId, H("69e7dd43dd99ac6be3f57ca333cc0d814189e83aee1773c99a341aca085c0d46"));
+	ASSERT_EQ(b->m_sidechainId, H("9a3bfb3dfd90c28a6500c0eef4af4fe90d7b6f0813da9307f83b0878af01c6a8"));
 	ASSERT_EQ(b->m_transactions.size(), 174);
 
 	tpl.get_hashing_blobs(0, 1000, blobs, height, diff, aux_diff, sidechain_diff, seed_hash, nonce_offset, template_id);
@@ -208,7 +212,7 @@ TEST(block_template, update)
 	ASSERT_EQ(template_id, 4U);
 
 	keccak(blobs.data(), static_cast<int>(blobs.size()), blobs_hash.h);
-	ASSERT_EQ(blobs_hash, H("4f62562aa84400eb085f58447d8daa45257369f1ec046b2150212329c9e86ae4"));
+	ASSERT_EQ(blobs_hash, H("3de3443e80f909dbd6350fda549bf34f21a2c056aba8e7d19f6826adacf546ca"));
 	}
 	thread_pool_destroy();
 	destroy_crypto_cache();
@@ -225,7 +229,7 @@ TEST(block_template, submit_sidechain_block)
 	{
 	SideChain sidechain(nullptr, NetworkType::Mainnet, "unit_test");
 
-	ASSERT_EQ(sidechain.consensus_hash(), H("81d45b62c10afa4fdda7cebb02dd5ad82c43b577eb3fb0857824427c55fd8a8d"));
+	ASSERT_EQ(sidechain.consensus_hash(), H("4a1acc8e4ecebb0d4d2e51ee21e4a650095d6f1f4422e9660a3f7960a4d0a7e2"));
 
 	BlockTemplate tpl(&sidechain, nullptr);
 	tpl.rng().seed(123);
@@ -249,7 +253,7 @@ TEST(block_template, submit_sidechain_block)
 	Mempool mempool;
 	Params params;
 
-	params.m_miningWallet = Wallet("44MnN1f3Eto8DZYUWuE5XZNUtE3vcRzt2j6PzqWpPau34e6Cf4fAxt6X2MBmrm6F9YMEiMNjN6W4Shn4pLcfNAja621jwyg");
+	params.m_miningWallet = Wallet("VuA6u7NUSZzQsVjMKkZxAdV1hxdCo4nmees727HhMSCRar8e268LKcXXVZ2Rz41XPCdgWS3TquZY74e24hcUYH5V4JtAkfHUWM");
 
 	std::mt19937_64 rng(101112);
 
@@ -273,7 +277,7 @@ TEST(block_template, submit_sidechain_block)
 		data.median_timestamp += sidechain.block_time();
 	}
 
-	ASSERT_EQ(sidechain.difficulty(), 219467);
+	ASSERT_EQ(sidechain.difficulty(), 2187);
 	ASSERT_EQ(sidechain.blocksById().size(), 4493);
 	ASSERT_TRUE(sidechain.precalcFinished());
 
@@ -286,7 +290,7 @@ TEST(block_template, submit_sidechain_block)
 	ASSERT_EQ(tip->m_txinGenHeight, data.height);
 	ASSERT_EQ(tip->m_sidechainHeight, sidechain.chain_window_size() * 3 - 1);
 
-	ASSERT_EQ(tip->m_sidechainId, H("12d57571a28d62d2b6dca3a647500d23ac22864138b22a133f237b459a0862da"));
+	ASSERT_EQ(tip->m_sidechainId, H("0f01d55399b7b9ca96bf35dc7266ec77bb151f64044edca5fa8a6f375f95d7e9"));
 	}
 	thread_pool_destroy();
 	destroy_crypto_cache();
@@ -302,7 +306,7 @@ TEST(block_template, genesis_block_max_timestamp)
 	init_crypto_cache();
 	{
 	SideChain sidechain(nullptr, NetworkType::Mainnet, "unit_test");
-	ASSERT_EQ(sidechain.consensus_hash(), H("81d45b62c10afa4fdda7cebb02dd5ad82c43b577eb3fb0857824427c55fd8a8d"));
+	ASSERT_EQ(sidechain.consensus_hash(), H("4a1acc8e4ecebb0d4d2e51ee21e4a650095d6f1f4422e9660a3f7960a4d0a7e2"));
 
 	BlockTemplate tpl(&sidechain, nullptr);
 	tpl.rng().seed(0);
@@ -320,12 +324,12 @@ TEST(block_template, genesis_block_max_timestamp)
 	Mempool mempool;
 	Params params;
 
-	params.m_miningWallet = Wallet("44MnN1f3Eto8DZYUWuE5XZNUtE3vcRzt2j6PzqWpPau34e6Cf4fAxt6X2MBmrm6F9YMEiMNjN6W4Shn4pLcfNAja621jwyg");
+	params.m_miningWallet = Wallet("VuA6u7NUSZzQsVjMKkZxAdV1hxdCo4nmees727HhMSCRar8e268LKcXXVZ2Rz41XPCdgWS3TquZY74e24hcUYH5V4JtAkfHUWM");
 
 	tpl.update(data, mempool, params);
 
 	ASSERT_TRUE(tpl.submit_sidechain_block(1, 0, 0));
-	ASSERT_EQ(sidechain.difficulty(), 100000);
+	ASSERT_EQ(sidechain.difficulty(), 1000);
 
 	const PoolBlock* tip = sidechain.chainTip();
 
@@ -337,7 +341,7 @@ TEST(block_template, genesis_block_max_timestamp)
 	ASSERT_EQ(tip->m_txinGenHeight, data.height);
 	ASSERT_EQ(tip->m_sidechainHeight, 0);
 
-	ASSERT_EQ(tip->m_sidechainId, H("cd83d28671cfdad7e86b07debc45737e4bec40e4555023634a9921d7687e504e"));
+	ASSERT_EQ(tip->m_sidechainId, H("72f59e589e67142025fa0a7d7ce3e73eec878185ccf73ff2075f2636b5da2304"));
 	}
 	thread_pool_destroy();
 	destroy_crypto_cache();

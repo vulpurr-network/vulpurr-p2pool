@@ -42,13 +42,14 @@ TEST(pool_block, deserialize)
 	init_crypto_cache();
 	{
 	PoolBlock b;
-	SideChain sidechain(nullptr, NetworkType::Mainnet, "default");
+	// Vulpurr main sidechain ("vulpurr"), block.dat is a share from it (main chain height 2001)
+	SideChain sidechain(nullptr, NetworkType::Mainnet);
 
 	constexpr uint64_t expected_consensus_id[HASH_SIZE / sizeof(uint64_t)] = {
-		0x92680bb5e77eaf22ull,
-		0x27446c2c6bda99e3ull,
-		0x008e04a9d40451b2ull,
-		0x18f90744f09d6eb1ull
+		0xbaf33906cd87510cull,
+		0x83ed36266b6e6341ull,
+		0xbc21a7606064681full,
+		0x3804f3e34f300f28ull
 	};
 
 	const std::vector<uint8_t>& consensus_id = sidechain.consensus_id();
@@ -73,37 +74,36 @@ TEST(pool_block, deserialize)
 		ASSERT_EQ(memcmp(id.data() + HASH_SIZE + NONCE_SIZE, &b.m_extraNonce, EXTRA_NONCE_SIZE), 0);
 	}
 
-	ASSERT_EQ(b.get_payout(Wallet("4B4aCvEcZr6GcusVJfEds2LXixCeJ2dQBaDUCguWmzi5L7PW5tVXfAnE4cn1mQdiNzH6zWcEPMQTiYTsNcX44ryxCJWZKZH")), 17411468548U);
-	ASSERT_EQ(b.get_payout(Wallet("43VbH7CQCJqhH1d327TBenCs9hFN3zvcgX5YZdGyJfEE5rabasAtKhyPsKmbYSU9AmMReACZrz9j5U2Ba6WXWoQpVi38AJn")), 1404738424U);
-	ASSERT_EQ(b.get_payout(Wallet("46r3PD45TYH9jVf8sEejW9JdK1EgNe6BeYLdGyJTU1MRctoevAHXpzSjBMJhdkLirGXwiWdZejSRZ8MZP72artSD17LprKY")), 1419699645U);
-	ASSERT_EQ(b.get_payout(Wallet("44MnN1f3Eto8DZYUWuE5XZNUtE3vcRzt2j6PzqWpPau34e6Cf4fAxt6X2MBmrm6F9YMEiMNjN6W4Shn4pLcfNAja621jwyg")), 0U);
+	ASSERT_EQ(b.get_payout(Wallet("VuA6fvjxfWV9zgCHNTz3Se2RFYpDLfKt4DffQpS9cdCyP59ymnDRpszavXZ2HMHHYiKrghU1K18W3F8S1VK57BBG5CssTjjYQn")), 35050409908221U);
+	ASSERT_EQ(b.get_payout(Wallet("VuA6u7NUSZzQsVjMKkZxAdV1hxdCo4nmees727HhMSCRar8e268LKcXXVZ2Rz41XPCdgWS3TquZY74e24hcUYH5V4JtAkfHUWM")), 0U);
+	ASSERT_EQ(b.get_payout(Wallet("VuA6viSJ4AtF7wPZzMU8iubpuTct1v8HFKk25eA3g5pSEzaXHzzNceMCsT4azsUuxnbvpQbpxdRfTXMR35MfvYez2Fr4q1ioSh")), 0U);
 
 	size_t header_size, miner_tx_size;
 	int outputs_offset, outputs_blob_size;
 	const std::vector<uint8_t> mainchain_data = b.serialize_mainchain_data(&header_size, &miner_tx_size, &outputs_offset, &outputs_blob_size);
 	const std::vector<uint8_t> sidechain_data = b.serialize_sidechain_data();
 
-	ASSERT_EQ(mainchain_data.size(), 1829U);
+	ASSERT_EQ(mainchain_data.size(), 169U);
 	ASSERT_EQ(header_size, 43U);
-	ASSERT_EQ(miner_tx_size, 1145U);
-	ASSERT_EQ(outputs_offset, 54);
-	ASSERT_EQ(outputs_blob_size, 1058);
+	ASSERT_EQ(miner_tx_size, 125U);
+	ASSERT_EQ(outputs_offset, 50);
+	ASSERT_EQ(outputs_blob_size, 42);
 
 	ASSERT_EQ(b.m_majorVersion, 16U);
 	ASSERT_EQ(b.m_minorVersion, 16U);
-	ASSERT_EQ(b.m_timestamp, 1728813765U);
-	ASSERT_EQ(b.m_nonce, 352454720U);
-	ASSERT_EQ(b.m_txinGenHeight, 3258099U);
-	ASSERT_EQ(b.m_ephPublicKeys.size(), 27U);
-	ASSERT_EQ(b.m_outputAmounts.size(), 27U);
+	ASSERT_EQ(b.m_timestamp, 1791804853U);
+	ASSERT_EQ(b.m_nonce, 4294947193U);
+	ASSERT_EQ(b.m_txinGenHeight, 2001U);
+	ASSERT_EQ(b.m_ephPublicKeys.size(), 1U);
+	ASSERT_EQ(b.m_outputAmounts.size(), 1U);
 	ASSERT_EQ(b.m_extraNonceSize, 4U);
-	ASSERT_EQ(b.m_extraNonce, 2983923783U);
-	ASSERT_EQ(b.m_transactions.size(), 21U);
+	ASSERT_EQ(b.m_extraNonce, 781038648U);
+	ASSERT_EQ(b.m_transactions.size(), 1U);
 	ASSERT_EQ(b.m_uncles.size(), 0U);
-	ASSERT_EQ(b.m_sidechainHeight, 9443384U);
-	ASSERT_EQ(b.m_difficulty.lo, 1828732004U);
+	ASSERT_EQ(b.m_sidechainHeight, 1937U);
+	ASSERT_EQ(b.m_difficulty.lo, 64065U);
 	ASSERT_EQ(b.m_difficulty.hi, 0U);
-	ASSERT_EQ(b.m_cumulativeDifficulty.lo, 15051095864465561ull);
+	ASSERT_EQ(b.m_cumulativeDifficulty.lo, 127354550ull);
 	ASSERT_EQ(b.m_cumulativeDifficulty.hi, 0U);
 	ASSERT_EQ(b.m_depth, 0U);
 	ASSERT_EQ(b.m_verified, false);
@@ -111,7 +111,8 @@ TEST(pool_block, deserialize)
 	ASSERT_EQ(b.m_broadcasted, false);
 	ASSERT_EQ(b.m_wantBroadcast, false);
 
-	const hash seed = H("bf513dbe52c22b09e65edae222ec902d6adb75585a0141b81a165f0fb0c9c0bc");
+	// Seed hash for main chain height 2001 (the genesis block)
+	const hash seed = H("d39674a0763c5d130a80c5bfdcb635c2dbf8377b294611d8c0270b192c3f890e");
 
 	RandomX_Hasher hasher(nullptr);
 	hasher.set_seed(seed);
@@ -121,7 +122,7 @@ TEST(pool_block, deserialize)
 
 	std::stringstream s;
 	s << pow_hash;
-	ASSERT_EQ(s.str(), "0906c001cc0900098fe1b62593f8ba52bd1ae2a0806096aa361a9f1702000000");
+	ASSERT_EQ(s.str(), "658fee187198ff2711594c37e88e9dfaf74febc641a0dd603fab47668b320000");
 
 	ASSERT_EQ(b.m_difficulty.check_pow(pow_hash), true);
 
@@ -152,21 +153,18 @@ TEST(pool_block, verify)
 		uint32_t m_expectedSharesNextBlock;
 		bool m_shuffle;
 		hash m_templateBlobsHash;
-	} tests[6] = {
-		{ "default", "sidechain_dump.dat", 3456189, 11704382, 53, false, H("c84a85eebf17ab266e8a81b347dd7490043ede3a055c0dbe85e9cd378905845a") },
-		{ "default", "sidechain_dump.dat", 3456189, 11704382, 53, true, H("c84a85eebf17ab266e8a81b347dd7490043ede3a055c0dbe85e9cd378905845a") },
-		{ "mini", "sidechain_dump_mini.dat", 3456189, 11207082, 578, false, H("08debd1378bae899017eb58362f4c638d78e5218558025142dcbc2651c76b27e") },
-		{ "mini", "sidechain_dump_mini.dat", 3456189, 11207082, 578, true, H("08debd1378bae899017eb58362f4c638d78e5218558025142dcbc2651c76b27e") },
-		{ "nano", "sidechain_dump_nano.dat", 3456189, 188542, 115, false, H("dd667c41eb15ffb0eb662065545dc0dfbbcac8393348a4fc0a7367040319b0d5") },
-		{ "nano", "sidechain_dump_nano.dat", 3456189, 188542, 115, true, H("dd667c41eb15ffb0eb662065545dc0dfbbcac8393348a4fc0a7367040319b0d5") },
+	} tests[2] = {
+		// Vulpurr main sidechain from genesis up to height 1937 (main chain height 2001)
+		{ nullptr, "sidechain_dump.dat", 2001, 1937, 2, false, H("33acbbc11b976d742d6a5452deca7fecf6c6073c6301ae6538ca0f14e21fde7d") },
+		{ nullptr, "sidechain_dump.dat", 2001, 1937, 2, true, H("33acbbc11b976d742d6a5452deca7fecf6c6073c6301ae6538ca0f14e21fde7d") },
 	};
 
 	for (const STest& t : tests)
 	{
 		SideChain sidechain(nullptr, NetworkType::Mainnet, t.m_poolName);
 
-		// Difficulty of block 3454976
-		sidechain.m_testMainChainDiff = difficulty_type(625461936742ULL, 0ULL);
+		// Difficulty of block 2001 (its seed block is the genesis block with difficulty 1)
+		sidechain.m_testMainChainDiff = difficulty_type(2635973ULL, 0ULL);
 
 		std::ifstream f(t.m_fileName, std::ios::binary | std::ios::ate);
 		ASSERT_EQ(f.good() && f.is_open(), true);
@@ -228,9 +226,9 @@ TEST(pool_block, verify)
 			MinerData data;
 			data.major_version = 16;
 			data.height = t.m_txinGenHeight;
-			data.prev_id = H("f7723462d2f4d9f605601df8de8bd483802d2275f77cbf3a6f61d8f3fc4c47bc");
-			data.seed_hash = H("11186f5a8473d8dc7a0d3a0bf25834a07b1dffe8741d53cd543a8708c2e8b2a9");
-			data.difficulty = { 656711234691ULL, 0 };
+			data.prev_id = H("d4b120a9380c71b925a29d538567255ccb252b3ffff99b6af6ed01ad85ced90b");
+			data.seed_hash = H("d39674a0763c5d130a80c5bfdcb635c2dbf8377b294611d8c0270b192c3f890e");
+			data.difficulty = { 2635973ULL, 0 };
 			data.median_weight = 300000;
 			data.already_generated_coins = std::numeric_limits<uint64_t>::max();
 			data.median_timestamp = (1ULL << 35) - 2;
@@ -250,8 +248,8 @@ TEST(pool_block, verify)
 
 			Params params;
 
-			params.m_miningWallet = Wallet("44MnN1f3Eto8DZYUWuE5XZNUtE3vcRzt2j6PzqWpPau34e6Cf4fAxt6X2MBmrm6F9YMEiMNjN6W4Shn4pLcfNAja621jwyg");
-			params.m_subaddress = Wallet("86eQxzSW4AZfvsWRSop755WZUsog6L3x32NRZukeeShnS4mBGVpcqQhS6pCNxj44usPKNwesZ45ooHyjDku6nVZdT3Q9qrz");
+			params.m_miningWallet = Wallet("VuA6u7NUSZzQsVjMKkZxAdV1hxdCo4nmees727HhMSCRar8e268LKcXXVZ2Rz41XPCdgWS3TquZY74e24hcUYH5V4JtAkfHUWM");
+			params.m_subaddress = Wallet("Vs7QnQWuht41bX8B5jy3PEPGMXK33H3RABgyNSESVST5EfqPeVsU1PCFgY15mMvR8JM1TU2AMC9s3V87cDunSwVN5fBbSdrK6U");
 
 			tpl.update(data, mempool, params);
 
@@ -270,7 +268,7 @@ TEST(pool_block, verify)
 		}
 
 		PoolBlock block;
-		ASSERT_TRUE(block.m_minerWallet.decode("44MnN1f3Eto8DZYUWuE5XZNUtE3vcRzt2j6PzqWpPau34e6Cf4fAxt6X2MBmrm6F9YMEiMNjN6W4Shn4pLcfNAja621jwyg"));
+		ASSERT_TRUE(block.m_minerWallet.decode("VuA6u7NUSZzQsVjMKkZxAdV1hxdCo4nmees727HhMSCRar8e268LKcXXVZ2Rz41XPCdgWS3TquZY74e24hcUYH5V4JtAkfHUWM"));
 
 		std::vector<MinerShare> shares;
 
